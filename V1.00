@@ -1,0 +1,87 @@
+options:
+  prefix: &6&lServer Name &8»&f
+  mine: &6&lMME &8»&f
+
+on script load:
+    wait 5 seconds
+    set {version} to 1.00
+    set {vreq} to 1.00
+    send "&7[&6MME&7] &fYou are running &eV%{version}%&f." to {perms::*}
+    if {version} is not {vreq}:
+        send "&7[&6MME&7] &cThis is outdated! &e(Latest: V%{vreq}%)" to {perms::*}
+    else:
+        send "&7[&6MME&7] &aAll up to date!" to {perms::*} 
+command /mine <text> [<text>]:
+  permission: *
+  trigger:
+    add player to {perms::*} if {perms::*} does not contain player
+    if arg-2 is set:
+      if arg-1 is "create":
+        add arg-2 to {mines::*}
+        send "{@mine} &aSuccesfully created mine &c%arg-2%&a!"
+      else if arg-1 is "pos1":
+        if {mines::*} contains arg-2:
+          set {pos1::%arg-2%} to player's location
+          send "{@mine} &aSuccessfully set position 1 of mine &c%arg-2%&a!"
+        else:
+          send "{@mine} &cThat mine doesn't exist!"
+      else if arg-1 is "pos2":
+        if {mines::*} contains arg-2:
+          set {pos2::%arg-2%} to player's location
+          send "{@mine} &aSuccessfully set position 2 of mine &c%arg-2%&a!"
+        else:
+          send "{@mine} &cThat mine doesn't exist!"
+      else if arg-1 is "delete":
+        if {mines::*} contains arg-2:
+          remove arg-2 from {mines::*}
+          send "{@mine} &aSuccessfully deleted mine &c%arg-2%&a!"
+        else:
+          send "{@mine} &cThat mine doesn't exist!"
+      else if arg-1 is "time":
+        set {w} to 0
+        set {mine.time} to arg-2
+        set {_t} to (arg-2 parsed as an integer)
+        if {_t} is less than 1:
+          send "{@mine} &cError! Time must be a positive value!"
+        else if {_t} is equal to 1:
+          send "{@mine} &aSuccessfully set the time between resets to &c%arg-2% minute&a!"
+          set {mine.time} to arg-2
+        else if {_t} is greater than 10:
+          send "{@mine} &cError! Time is capped at 10 minutes!"
+        else if {_t} is greater than 1:
+          send "{@mine} &aSuccessfully set the time between resets to &c%arg-2% minutes&a!"
+          set {mine.time} to arg-2
+      else if arg-1 is "block":
+        if {mines::*} contains arg-2:
+          send "{@mine} &aMine &c%arg-2% &awill now reset with &c%player's held item%&a!"
+          set {block::%arg-1%} to player's held item
+        else:
+          send "{@mine} &cPlease specify an existing mine!"
+    else:
+      if arg-1 is "list":
+        if {mines::*} is set:
+          send "{@mine} %{mines::*}%"
+        else:
+          send "{@mine} &cThere are no mines!"
+      else if arg-1 is "help":
+        send "&6&lMME &8| &6Mines Made Easy"
+        send "&e/mine create [mine] &8- &fCreate a mine &e(/mine mines for all mine-types available)"
+        send "&e/mine pos1 [mine] &8- &fSets the first position of the specified mine."
+        send "&e/mine pos2 [mine] &8- &fSets the second position of the specified mine."
+        send "&e/mine <mine> <block> &8- &fResets the specified mine with the specified block."
+        send "&e/mine time <amount of minutes> &8- &fSpecifices the amount of minutes between each global mine reset."
+        send "&e/mine delete <mine> &8- &fDeletes the specified mine."
+        send "&e/mine block <mine> &8- &fFills the specified mine with the player's held item every reset."
+every minute:
+  loop all players:
+    if {w} is greater than or equal to ({mine.time} - 1):
+      set {w} to 0
+      send "{@prefix} &eMines have reset!" to loop-player
+      set {_p} to 1
+      loop {mines::*}:
+        set {_l} to {pos1::%{mines::%{_p}%}%}
+        set {_l2} to {pos2::%{mines::%{_p}%}%}
+        set all blocks within {_l} and {_l2} to {block::%{mines::%{_p}%}%}
+        add 1 to {_p}
+    else:
+      add 1 to {w}
